@@ -1,0 +1,183 @@
+from os import remove
+
+import pygame
+import pygame as py
+from pygame.examples.cursors import image
+
+py.init()
+
+win = py.display.set_mode((1400, 768))
+dog=py.image.load("fatass.jpg")
+py.display.set_caption("Game")
+background = py.image.load('background.jpg')
+char=py.image.load('fat.jpg')
+newHeight=100
+newWidth=100
+char=py.transform.scale(char, (newWidth, newHeight))
+dog=py.transform.scale(dog, (300, 200))
+explode=py.image.load('explode.jpg')
+running=True
+
+class enemy(object):
+    def __init__(self,x,y,width,height,end):
+        self.x=x
+        self.y=y
+        self.width=width
+        self.height=height
+        self.path=[self.x,end]
+        self.walkcount=0
+        self.vel=3
+        self.hitbox = (self.x, self.y, self.width, self.height)
+        self.isHit=False
+    def draw(self,win):
+        self.move()
+        if self.walkcount+1>40:
+            self.walkcount=0
+        if self.vel>0:
+            win.blit(dog,(self.x,self.y))
+            self.walkcount+=1
+        else:
+            win.blit(dog,(self.x,self.y))
+            self.walkcount+=1
+        self.hitbox = (self.x, self.y, self.width, self.height)
+        if self.isHit:
+            win.blit(explode, (self.x, self.y))
+        py.draw.rect(win,(255,0,0),self.hitbox,2)
+    def move(self):
+        if self.vel>0:
+            if self.x<self.path[1]+self.vel:
+                self.x+=self.vel
+            else:
+                self.vel = self.vel * -1
+                self.x += self.vel
+                self.walkCount = 0
+        else:
+            if self.x > self.path[0] - self.vel:
+                self.x += self.vel
+            else:
+                self.vel = self.vel * -1
+                self.x += self.vel
+                self.walkCount = 0
+    def hit(self):
+        print(self.hitbox)
+        print("hit")
+        print("skibidi toilet")
+        self.isHit=True
+
+class player(object):
+    def __init__(self,x,y,width,height):
+        self.x=x
+        self.y=y
+        self.width=width
+        self.height=height
+        self.velocity=5
+        self.isJumping=False
+        self.jumpCount=10
+        self.left=False
+        self.right=False
+        self.walkcount=0
+        self.standing=True
+        self.hitbox=(self.x,self.y,self.width,self.height)
+    def draw(self,win):
+        if fatass.walkcount + 1 >= 27:
+           fatass.walkcount = 0
+        if not (self.standing):
+           if fatass.left:
+               win.blit(char, (self.x,self.y))
+               fatass.walkcount += 1
+           elif fatass.right:
+               print("fat ass moving to the right")
+               win.blit(char, (self.x, self.y))
+               fatass.walkcount += 1
+        else:
+           if self.right:
+               win.blit(char, (self.x,self.y))
+           else:
+               win.blit(char, (self.x, self.y))
+        self.hitbox = (self.x, self.y, self.width, self.height)
+        py.draw.rect(win,(255,0,0),self.hitbox,2)
+
+class projectile():
+    def __init__(self,x,y,radius,color,facing):
+        self.x=x
+        self.y=y
+        self.radius=radius
+        self.color=color
+        self.facing=facing
+        self.velocity=8*facing
+
+    def draw(self,win):
+        pygame.draw.circle(win,self.color,(self.x,self.y),self.radius)
+cat=player(60,650,100,100)
+dog=enemy(600,550,300,200,1000)
+def redrawWindow():
+    win.blit(background, (0, 0))
+    fatass.draw(win)
+    fatfucker.draw(win)
+    for bullet in bullets:
+        bullet.draw(win)
+    py.display.update()
+bullets=[]
+enemies=[dog]
+while running:
+    py.time.delay(50)
+
+    for event in py.event.get():
+        if event.type == py.QUIT:
+            running = False
+
+    for bullet in bullets:   # checks above bottom of rectangle               #checks below top of rectangle
+        if bullet.y-bullet.radius<dog.hitbox[1]+dog.hitbox[3] and bullet.y+bullet.radius>dog.hitbox[1]: #1 is y and 3 is height
+            if bullet.x+bullet.radius>dog.hitbox[0] and  bullet.x-bullet.radius<dog.hitbox[0]+dog.hitbox[3]:
+                dog.hit()
+                for e in enemies:
+                    enemies.pop(enemies.index(e))
+                bullets.pop(bullets.index(bullet))
+        if bullet.x<1400 and bullet.x>0:
+            bullet.x+=bullet.velocity
+        else:
+            bullets.pop(bullets.index(bullet))#garbage collection
+
+    key=pygame.key.get_pressed()
+
+    if key[py.K_a] and fatass.x>fatass.velocity:   # Making sure the top left position of our character is greater than our vel so we never move off the screen.
+        fatass.x-=fatass.velocity
+        fatass.left=True
+        fatass.standing=False
+        fatass.right=False
+    if key[py.K_d] and fatass.x<1350-cat.velocity-cat.width:# Making sure the top right corner of our character is less than the screen width - its width
+        cat.x+=cat.velocity
+        cat.left=False
+        cat.standing=False
+        cat.right=True
+    if key[py.K_w]:
+        if cat.left:
+            facing=-1
+        else:
+            facing=1
+        if len(bullets)<10:
+            bullets.append(projectile(round(fatass.x+fatass.width//2),round(fatass.y+fatass.height//2),5,(0,0,0),facing))
+    else:
+        cat.standing=True
+
+    if not cat.isJumping:
+        # if key[py.K_w] and cat.y>cat.velocity:
+        #     cat.y-=cat.velocity
+        if key[py.K_s] and cat.y<700-cat.height-cat.velocity:
+            cat.y+cat.velocity
+        if key[py.K_SPACE]:
+            cat.isJumping=True
+    else:
+        if cat.jumpCount>=-10:
+            cat.y-=(cat.jumpCount*abs(cat.jumpCount))*.5 #times absoulte value
+            cat.jumpCount-=1
+        else:
+            cat.jumpCount=10
+            cat.isJumping=False
+
+    redrawWindow()
+    # win.blit(background, (0, 0))
+    # py.draw.rect(win, (255,255,255), (x,y,width,height))
+    # py.display.update()
+
+py.quit()
