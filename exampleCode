@@ -7,7 +7,7 @@ from pygame.examples.cursors import image
 py.init()
 
 win = py.display.set_mode((1400, 768))
-dog=py.image.load("fatass.jpg")
+dogImg=py.image.load("dog.jpg")
 py.display.set_caption("Game")
 background = py.image.load('background.jpg')
 char=py.image.load('fat.jpg')
