@@ -1,0 +1,166 @@
+#box
+#mouse
+#street
+#I LOVE MAMO
+import pygame as py
+import math
+py.init()
+
+scroll=0
+
+
+
+
+window = py.display.set_mode((1500, 600))
+#obstacles
+boxImg=py.image.load('box.png').convert_alpha()
+
+#the player aka the rat
+rat=py.image.load("rat.jfif").convert()
+
+#background/street
+# bg=py.image.load("street.jfif").convert()
+# bg=py.image.load("bgStreet.png").convert_alpha()
+bg=py.image.load("bg.png").convert_alpha()
+
+#changes img size to desired size
+# background=py.transform.scale(bg,(800,600))
+plr=py.transform.scale(rat,(50,50))
+box=py.transform.scale(boxImg,(80,80))
+
+#helps calulate illusion
+bgWidth=bg.get_width()
+tiles=math.ceil(1500/bgWidth)+1 #adds buffer to tiles to prevent screen glitches
+
+print(tiles)
+
+debugHitbox=True
+
+'''
+amount of background images is screen width/backgrounds with
+'''
+
+lives=3
+
+
+#Condition
+running=True
+
+#we can use this to create multiple objects
+class obstacles(object):
+    def __init__(self,x,y,width,height):
+        self.x=x
+        self.y=y
+        self.width=width
+        self.height=height
+        #self.hitbox=(self.x,self.y,self.width,self.height)
+        self.hitbox = py.Rect(self.x, self.y, self.width, self.height)
+        self.speed=10
+    def draw(self,win):
+        win.blit(box,(self.x,self.y))
+        # self.hitbox = (self.x, self.y, self.width, self.height)
+        self.x-=self.speed
+        self.hitbox=self.hitbox.move(-10,0)
+        if debugHitbox:
+            py.draw.rect(win, (255, 0, 0), self.hitbox, 2)
+
+class player(object):
+    def __init__(self,x,y,width,height):
+        self.x=x
+        self.y=y
+        self.width=width
+        self.height=height
+        #self.hitbox=(self.x,self.y,self.width,self.height)
+        self.hitbox=py.Rect(self.x,self.y,self.width,self.height)#creates rectangle object might help for collision
+        self.jumpCount=10
+        self.isJumping=False
+        #self.lives=3
+    def draw(self,win):
+        # self.hitbox=(self.x,self.y,self.width,self.height)
+        win.blit(plr,(self.x,self.y))
+        self.hitbox=py.Rect(self.x, self.y, self.width, self.height)
+        if debugHitbox: #change to false to turn off outline
+            #print("hitbox visual active")
+            py.draw.rect(win,(255,0,0),self.hitbox,2)#draws outline of hitbox
+
+#create our objects
+person=player(30,550,50,50)
+jumpBox=obstacles(1420,540,80,80)
+
+obstaclesList=[jumpBox]
+font=py.font.SysFont("Arial",80)
+def redrawWindow(win):
+    # window.blit(background,(0,0))
+    #make sure scrolls value can be changed
+    global scroll
+    strLife =str(lives)
+    # surf1=font1.render(strLife,False,(255,255,255))
+    # window.blit(surf1,(100,0))
+
+
+    for i in range(0,tiles): #in range n tiles blit to screen
+         window.blit(bg,(i*bgWidth+scroll,0)) #x coordinate cant be the same, so offset the x by one images width
+    #scroll background
+    scroll -=10 # this is the speed
+
+    #reset scroll
+    if abs(scroll)>bgWidth: #resets images
+        scroll=0
+   #live amount
+    fnt = font.render(strLife, True, (0, 0, 0))
+    window.blit(fnt, (1420, 50))
+
+    person.draw(win)
+    jumpBox.draw(win)
+    py.display.update()
+
+'''
+examples of collision
+red=py.Rect(0,0,50,50)
+green=py.Rect(0,0,50,50)
+print(red.colliderect(green))returns True checks collision between two rectanges
+USE FOR HITBOXES DIUHHHHH
+not stupid for loop
+'''
+
+debounce=0 #used to prevent multiple lives to be taken from one obstacle aka cooldown from collision
+
+
+while running:
+    py.time.delay(50)
+
+    for event in py.event.get():
+        if event.type==py.QUIT:
+            running=False
+
+    if debounce>0:
+        debounce+=1
+    #the numbers is how long you want to wait until deboucne resets
+    if debounce>20:
+        debounce=0
+
+    # print(jumpBox.hitbox.colliderect(jumpBox.hitbox))
+    if jumpBox.hitbox.colliderect(person.hitbox) and debounce==0:
+        print("COLLISION DETECTED")
+        debounce+=1
+        lives-=1
+    #get user nput
+    key=py.key.get_pressed()
+    if not person.isJumping:
+        if key[py.K_SPACE]:
+            print("jump")
+            person.isJumping=True
+    else:
+        # well ave 20 positions that out character will be at
+        if person.jumpCount>=-10:
+            neg=1
+            # this means character should be moving down
+            if person.jumpCount<0:
+                neg=-1
+            person.y-=(person.jumpCount**2)*.5*neg #moves 10^2 pixels first time than 9^2 etc
+            person.jumpCount-=1 #slowly move down
+        else:
+            person.isJumping=False
+            person.jumpCount=10
+    redrawWindow(window)
+py.quit()
