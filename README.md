@@ -1,3 +1,6 @@
 # pygameProject
-for 1321/n
-code for our project
+#Karen
+#Joshua
+#Oumar
+#Se'deja
+#Will
