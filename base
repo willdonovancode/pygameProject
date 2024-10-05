@@ -6,11 +6,6 @@ import pygame as py
 import math
 py.init()
 
-scroll=0
-
-
-
-
 window = py.display.set_mode((1500, 600))
 #obstacles
 boxImg=py.image.load('box.png').convert_alpha()
@@ -21,7 +16,7 @@ rat=py.image.load("rat.jfif").convert()
 #background/street
 # bg=py.image.load("street.jfif").convert()
 # bg=py.image.load("bgStreet.png").convert_alpha()
-bg=py.image.load("bg.png").convert_alpha()
+bg=py.image.load("bg.png").convert_alpha()# convert alpha makes transparent background
 
 #changes img size to desired size
 # background=py.transform.scale(bg,(800,600))
@@ -31,7 +26,7 @@ box=py.transform.scale(boxImg,(80,80))
 #helps calulate illusion
 bgWidth=bg.get_width()
 tiles=math.ceil(1500/bgWidth)+1 #adds buffer to tiles to prevent screen glitches
-
+#debuging
 print(tiles)
 
 debugHitbox=True
@@ -39,13 +34,16 @@ debugHitbox=True
 '''
 amount of background images is screen width/backgrounds with
 '''
-
+#global variables
 lives=3
-
+scroll=0
 
 #Condition
 running=True
 
+#could create new class for cheese and mousetrap
+#or make bool that makes it cheese
+#ex isCheese=True or isMouseTrap=TRue
 #we can use this to create multiple objects
 class obstacles(object):
     def __init__(self,x,y,width,height):
@@ -57,6 +55,9 @@ class obstacles(object):
         self.hitbox = py.Rect(self.x, self.y, self.width, self.height)
         self.speed=10
     def draw(self,win):
+        if self.x<-100:
+            self.x=1420
+            self.hitbox[0]=1420
         win.blit(box,(self.x,self.y))
         # self.hitbox = (self.x, self.y, self.width, self.height)
         self.x-=self.speed
@@ -79,6 +80,7 @@ class player(object):
         # self.hitbox=(self.x,self.y,self.width,self.height)
         win.blit(plr,(self.x,self.y))
         self.hitbox=py.Rect(self.x, self.y, self.width, self.height)
+
         if debugHitbox: #change to false to turn off outline
             #print("hitbox visual active")
             py.draw.rect(win,(255,0,0),self.hitbox,2)#draws outline of hitbox
@@ -87,17 +89,17 @@ class player(object):
 person=player(30,550,50,50)
 jumpBox=obstacles(1420,540,80,80)
 
+#list of obstacles could be used for garbage collection
 obstaclesList=[jumpBox]
 font=py.font.SysFont("Arial",80)
 def redrawWindow(win):
     # window.blit(background,(0,0))
     #make sure scrolls value can be changed
     global scroll
+    #cast amount  of lives to string
     strLife =str(lives)
-    # surf1=font1.render(strLife,False,(255,255,255))
-    # window.blit(surf1,(100,0))
 
-
+    #this creates moving background
     for i in range(0,tiles): #in range n tiles blit to screen
          window.blit(bg,(i*bgWidth+scroll,0)) #x coordinate cant be the same, so offset the x by one images width
     #scroll background
@@ -125,6 +127,10 @@ not stupid for loop
 
 debounce=0 #used to prevent multiple lives to be taken from one obstacle aka cooldown from collision
 
+#add speed variable so we can increase speed as game goes on
+
+#use math random for random obstacles
+#birds
 
 while running:
     py.time.delay(50)
@@ -157,7 +163,7 @@ while running:
             # this means character should be moving down
             if person.jumpCount<0:
                 neg=-1
-            person.y-=(person.jumpCount**2)*.5*neg #moves 10^2 pixels first time than 9^2 etc
+            person.y-=(person.jumpCount**2)*.5*neg #moves 10^2 pixels first time than 9^2 etc/2 so they dont move too many ixels
             person.jumpCount-=1 #slowly move down
         else:
             person.isJumping=False
