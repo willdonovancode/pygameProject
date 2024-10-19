@@ -1,0 +1,235 @@
+#box
+#mouse
+#street
+#I LOVE MAMO
+import pygame as py
+import math
+import random
+py.init()
+
+window = py.display.set_mode((1500, 600))
+py.display.set_caption("Rat Chase")
+#obstacles
+boxImg=py.image.load('box.png').convert_alpha()
+
+cheeseImg=py.image.load('chez.png').convert_alpha()
+#mainBoxImp=py.image.load('mainBox.png').convert_alpha()
+carImg=py.image.load('car.png').convert_alpha()
+catImg=py.image.load('cat.jpeg').convert_alpha()
+trashImg=py.image.load('trash.png').convert_alpha()
+ratTrapImg=py.image.load('mouseTrap.png').convert_alpha()
+dogImg=py.image.load('dog.png').convert_alpha()
+heartImg=py.image.load('heart.png').convert_alpha()
+mailBoxImg=py.image.load('mailbox.png').convert_alpha()
+lightPoleImg=py.image.load('lightpole.png').convert_alpha()
+birdImg=py.image.load('birdy.png').convert_alpha()
+
+
+
+#the player aka the rat
+rat=py.image.load("mouse.png").convert_alpha()
+
+#background/street
+# bg=py.image.load("street.jfif").convert()
+# bg=py.image.load("bgStreet.png").convert_alpha()
+bg=py.image.load("bg.png").convert_alpha()# convert alpha makes transparent background
+
+#scaling for box
+plr=py.transform.scale(rat,(50,50))
+box=py.transform.scale(boxImg,(80,80))
+dogImg=py.transform.scale(dogImg,(100,100))
+#scaling for lightpole
+lightPoleImg=py.transform.scale(lightPoleImg,(100,100))
+#scaling for bird
+birdImg=py.transform.scale(birdImg,(100,100))
+#scaling for cheese
+cheeseImg=py.transform.scale(cheeseImg,(100,100))
+
+#scaling for trash
+trashImg=py.transform.scale(trashImg,(100,100))
+#scaling for cat
+catImg=py.transform.scale(catImg,(100,100))
+#scaling for car
+carImg=py.transform.scale(carImg,(100,100))
+#scaling for dog
+dogImg=py.transform.scale(dogImg,(100,100))
+#scaling for mailbox
+mailBoxImg=py.transform.scale(mailBoxImg,(100,100))
+
+#image list
+imgList=[box,cheeseImg,carImg,catImg,trashImg,ratTrapImg,dogImg,lightPoleImg,birdImg]
+
+num=0
+
+#helps calulate illusion
+bgWidth=bg.get_width()
+tiles=math.ceil(1500/bgWidth)+1 #adds buffer to tiles to prevent screen glitches
+#debuging
+#print(tiles)
+#turn to false to turn of hitbox
+debugHitbox=True
+
+'''
+amount of background images is screen width/backgrounds with
+'''
+#global variables
+lives=3
+scroll=0
+cheeseScore=0
+gameSpeed=7 #we can change this to speed
+
+#Condition
+running=True
+
+#Instructions for screen
+#could create new class for cheese and mousetrap
+#or make bool that makes it cheese
+#ex isCheese=True or isMouseTrap=TRue
+#we can use this to create multiple objects
+class obstacles(object):
+    def __init__(self,x,y,width,height,img):
+        self.x=x
+        self.y=y
+        self.width=width
+        self.height=height
+        self.isCheese = False
+        self.isMouseTrap = False
+        self.hitbox = py.Rect(self.x, self.y, self.width, self.height)
+        self.speed=gameSpeed
+        self.image=img
+        self.debounce=0
+
+
+    def draw(self,win):
+        # num=len(imgList)-1
+        global num
+        if self.x<-100:
+            self.x=1420
+            self.hitbox[0]=1420
+            num = random.randint(1,len(imgList)-1)
+            print(imgList[num])
+
+        win.blit(imgList[num],(self.x,self.y))
+        self.x-=self.speed
+        self.hitbox=self.hitbox.move(-(gameSpeed),0)
+        if debugHitbox:
+            py.draw.rect(win, (255, 0, 0), self.hitbox, 2)
+
+class player(object):
+    def __init__(self,x,y,width,height):
+        self.x=x
+        self.y=y
+        self.width=width
+        self.height=height
+        self.hitbox=py.Rect(self.x,self.y,self.width,self.height)#creates rectangle object might help for collision
+        self.jumpCount=10
+        self.isJumping=False
+        #self.lives=3
+    def draw(self,win):
+        # self.hitbox=(self.x,self.y,self.width,self.height)
+        win.blit(plr,(self.x,self.y))
+        self.hitbox=py.Rect(self.x, self.y, self.width, self.height)
+
+        if debugHitbox: #change to false to turn off outline
+            #print("hitbox visual active")
+            py.draw.rect(win,(255,0,0),self.hitbox,2)#draws outline of hitbox
+
+#create our objects
+person=player(30,550,50,50)
+jumpBox=obstacles(1420,540,80,80,imgList[len(imgList)-1])
+#dog=obstacles(1520,500,100,100,dogImg)
+
+
+
+#list of obstacles could be used for garbage collection
+obstaclesList=[jumpBox]
+font=py.font.SysFont("Arial",80)
+def redrawWindow(win):
+    # window.blit(background,(0,0))
+    #make sure scrolls value can be changed
+    global scroll
+    #cast amount  of lives to string
+    strLife =str(lives)
+
+    #this creates moving background
+    for i in range(0,tiles): #in range n tiles blit to screen
+         window.blit(bg,(i*bgWidth+scroll,0)) #x coordinate cant be the same, so offset the x by one images width
+    #scroll background
+    scroll -=gameSpeed # this is the speed
+
+    #reset scroll
+    if abs(scroll)>bgWidth: #resets images
+        scroll=0
+   #live amount
+    fnt = font.render(strLife, True, (0, 0, 0))
+    window.blit(fnt, (1420, 50))
+
+    person.draw(win)
+
+    # jumpBox.draw(win)
+    for obj in obstaclesList:
+        obj.draw(win)
+    # Randomize obstacle's
+        #o.speed = random.randint(-5,-gameSpeed) #randomize speed
+
+
+    py.display.update()
+
+'''
+examples of collision
+red=py.Rect(0,0,50,50)
+green=py.Rect(0,0,50,50)
+print(red.colliderect(green))returns True checks collision between two rectanges
+USE FOR HITBOXES DIUHHHHH
+not stupid for loop
+'''
+
+debounce=0 #used to prevent multiple lives to be taken from one obstacle aka cooldown from collision
+
+#add speed variable so we can increase speed as game goes on
+
+#use math random for random obstacles
+#birds
+
+while running:
+    py.time.delay(30)
+
+    for event in py.event.get():
+        if event.type==py.QUIT:
+            running=False
+
+
+
+
+    #handles collisions for objects in
+    for o in obstaclesList:
+        if o.debounce>0:
+            o.debounce+=1
+        if o.debounce>50:
+            o.debounce=0
+        if o.hitbox.colliderect(person.hitbox) and o.debounce==0:
+            o.debounce+=1
+            lives-=1
+    #get user input
+    key=py.key.get_pressed()
+    if not person.isJumping:
+        if key[py.K_SPACE]:
+            print("jump")
+            person.isJumping=True
+    else:
+        # well ave 20 positions that out character will be at
+        if person.jumpCount>=-10:
+            neg=1
+            # this means character should be moving down
+            if person.jumpCount<0:
+                neg=-1                     #times .5 is how high you jump
+            person.y-=(person.jumpCount**2)*.5*neg #moves 10^2 pixels first time than 9^2 etc/2 so they dont move too many pixels
+            person.jumpCount-=1 #slowly move down
+        else:
+            person.isJumping=False
+            person.jumpCount=10
+    redrawWindow(window)
+
+    #lose screen
+
+py.quit()
