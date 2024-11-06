@@ -1,0 +1,262 @@
+#imports
+import pygame
+import pygame as py
+import math
+import random
+
+
+py.init()
+#game overscree
+gameoverwindow=py.display.set_mode((500,500))
+
+
+#
+
+
+window = py.display.set_mode((1500, 600))
+py.display.set_caption("Rat Chase")
+#obstacles
+boxImg=py.image.load('box.png').convert_alpha()
+dogImg=py.image.load('dog.png')
+birdImg=py.image.load('bluebird.png')
+heartImg=py.image.load('heart.png').convert_alpha()
+cheese=py.image.load("cheese.png")
+
+#the player aka the rat
+rat=py.image.load("mouse.png").convert_alpha()
+
+#background/street
+bg=py.image.load("bg.png").convert_alpha()# convert alpha makes transparent background
+instructions=py.image.load("instructions.png")
+instructions=py.transform.scale(instructions,(1500,600))
+
+#scaling for obstacles
+plr=py.transform.scale(rat,(50,50))
+box=py.transform.scale(boxImg,(80,80))
+dogImg=py.transform.scale(dogImg,(80,80))
+birdImg=py.transform.scale(birdImg,(100,100))
+# hearts
+h1=py.transform.scale(heartImg,(100,100))
+h2=py.transform.scale(heartImg,(100,100))
+h3=py.transform.scale(heartImg,(100,100))
+#cheese
+cheese=py.transform.scale(cheese,(100,100))
+
+#sound effects
+crashSFX=py.mixer.Sound("crash.mp3")
+cheeseSFX=py.mixer.Sound("chezEat.mp3")
+
+
+#helps calculate illusion
+bgWidth=bg.get_width()
+tiles=math.ceil(1500/bgWidth)+1 #adds buffer to tiles to prevent screen glitches
+
+#turn to false to turn of hitbox
+debugHitbox=True
+
+
+
+#global variables
+# lives=3
+scroll=0
+#cheeseScore=0
+gameSpeed=7 #we can change this to speed
+
+gameOver = False
+instScreen=True
+
+#Instructions
+font=py.font.SysFont("Arial",80)
+
+
+class obstacles(object):
+    def __init__(self,x,y,width,height,img):
+        self.x=x
+        self.y=y
+        self.width=width
+        self.height=height
+        self.isCheese = False
+        self.isMouseTrap = False
+        self.hitbox = py.Rect(self.x, self.y, self.width, self.height)
+        self.speed=gameSpeed
+        self.image=img
+        self.debounce=0
+    def draw(self,win):
+        win.blit(self.image,(self.x,self.y))
+        self.x-=self.speed
+        self.hitbox=self.hitbox.move(-(gameSpeed),0)
+        if debugHitbox:
+            py.draw.rect(win, (255, 0, 0), self.hitbox, 2)
+
+class player(object):
+    def __init__(self,x,y,width,height):
+        self.x=x
+        self.y=y
+        self.width=width
+        self.height=height
+        self.hitbox=py.Rect(self.x,self.y,self.width,self.height)#creates rectangle object might help for collision
+        self.jumpCount=10
+        self.isJumping=False
+        #self.lives=3
+    def draw(self,win):
+        # self.hitbox=(self.x,self.y,self.width,self.height)
+        win.blit(plr,(self.x,self.y))
+        self.hitbox=py.Rect(self.x, self.y, self.width, self.height)
+        if debugHitbox:
+            #print("hitbox visual active")
+            py.draw.rect(win,(255,0,0),self.hitbox,2)#draws outline of hitbox
+
+#create our objects
+person=player(30,550,50,50)
+jumpBox=obstacles(1420,540,80,80,box)
+#dog=obstacles(1520,500,100,100,dogImg)
+
+#start_rect = py.Rect(0,)
+#load saved data
+with open("highscore.txt") as file:
+      highscore=file.read()
+
+with open("lives.txt") as file:
+    lives = file.read()
+    lives=int(lives)
+
+with open("cheese.txt") as file:
+    cheeseScore = file.read()
+    cheeseScore=int(cheeseScore)
+
+instructionScreen= True
+obstaclesList=[jumpBox]
+font =py.font.SysFont("Arial",80)
+def redrawWindow(win):
+    global instructionScreen
+    if instructionScreen:
+        window.blit(instructions,(0,0))
+        pygame.display.update()
+    if not instructionScreen:
+        global scroll
+        strLife =str(lives)
+        strCheese=str(cheeseScore)
+        #this creates moving background
+        for i in range(0,tiles): #in range n tiles blit to screen
+             window.blit(bg,(i*bgWidth+scroll,0)) #x coordinate cant be the same, so offset the x by one images width
+        #scroll background
+        scroll -=gameSpeed # this is the speed
+
+        #reset scroll
+        if abs(scroll)>bgWidth: #resets images
+            scroll=0
+
+        window.blit(cheese,(0, 0))
+        fnt = font.render(strCheese, True, (0, 0, 0))
+        window.blit(fnt, (100, 20))
+
+        #blit hearts
+        if lives==3:
+            window.blit(h1,(1100, 50))
+            window.blit(h2, (1200, 50))
+            window.blit(h3, (1300, 50))
+        if lives==2:
+            window.blit(h1, (1100, 50))
+            window.blit(h2, (1200, 50))
+        if lives==1:
+            window.blit(h1,(1100, 50))
+        if lives<=0:
+            pass
+        person.draw(win) #draw player/mouse
+
+        for obj in obstaclesList:
+            obj.draw(win)
+            if obj.x<-100:
+                obstaclesList.remove(obj)
+                rNum=random.randint(1,4)
+                print(rNum)
+                match rNum:
+                    case 1:
+                        dog = obstacles(1420, 520, 80, 80, dogImg)
+                        obstaclesList.append(dog)
+                    case 2:
+                        jumpBox = obstacles(1420, 540, 80, 80, box)
+                        obstaclesList.append(jumpBox)
+                    case 3:
+                        bird=obstacles(1420,300, 100, 100, birdImg)
+                        obstaclesList.append(bird)
+                    case 4:
+                        chez=obstacles(1420,540, 80, 80, cheese)
+                        chez.isCheese=True
+                        obstaclesList.append(chez)
+                    case _:
+                        jumpBox = obstacles(1420, 540, 80, 80, box)
+                        obstaclesList.append(jumpBox)
+        py.display.update()
+#Condition
+running=True
+game=True
+clock=py.time.Clock()
+while game:
+    if running:
+        clock.tick(40)
+        for event in py.event.get():
+            if event.type==py.QUIT:
+                running=False
+            if event.type==py.MOUSEBUTTONDOWN:
+                print("click")
+                instructionScreen=False
+
+        for o in obstaclesList:
+            if o.debounce>0:
+                o.debounce+=1
+                if o.debounce==25:
+                    cheeseSFX.stop()
+            if o.debounce>50:
+                o.debounce=0
+            if o.hitbox.colliderect(person.hitbox) and o.debounce==0:
+                if o.isCheese:
+                    o.debounce+=1
+                    cheeseScore+=1
+                    cheeseSFX.play()
+
+                else:
+                    crashSFX.play()
+                    o.debounce+=1
+                    lives-=1
+        #get user input
+        key=py.key.get_pressed()
+        if key[py.K_ESCAPE]:
+            running=False
+        if not person.isJumping:
+            if key[py.K_SPACE]:
+                person.isJumping=True
+        else:
+            # well ave 20 positions that out character will be at
+            if person.jumpCount>=-10:
+                neg=1
+                # this means character should be moving down
+                if person.jumpCount<0:
+                    neg=-1                     #times .5 is how high you jump
+                person.y-=(person.jumpCount**2)*.8*neg #moves 10^2 pixels first time than 9^2 etc/2 so they dont move too many pixels
+                person.jumpCount-=1 #slowly move down
+            else:
+                person.isJumping=False
+                person.jumpCount=10
+        redrawWindow(window)
+    if not running:
+        clock.tick(60)
+        gameoverwindow.fill((0,0,0))
+        for event in py.event.get():
+            if event.type==py.MOUSEBUTTONDOWN:
+                print("ask to restart")
+                running=True
+                lives=3
+                cheeseScore=0
+                #reset everything back to default
+            if event.type==py.QUIT:
+                game=False
+        pygame.display.update()
+py.quit()
+
+
+
+
+if cheeseScore>int(highscore):
+    with open("highscore.txt","w") as file:
+        file.write(str(cheeseScore))
